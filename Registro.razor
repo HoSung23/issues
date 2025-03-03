@@ -1,4 +1,4 @@
-﻿@page "/registro"
+@page "/registro"
 @using BlazorApp1.Data
 @using Microsoft.AspNetCore.Identity
 @using BlazorApp1.Components.Account.Shared
@@ -37,7 +37,7 @@
         <tr>
             <td>@ContadorId</td>
             <td>
-                <InputSelect id="Cliente" class="form-control" @bind-Value="Registros.Cliente">
+                <InputSelect id="Cliente" class="form-control" @bind-Value="nuevoRegistro.Cliente">
                     <option value="">Seleccione una opcion</option>
                     @foreach (var cliente in Clientes)
                     {
@@ -46,7 +46,7 @@
                 </InputSelect>
             </td>
             <td>
-                <InputSelect id="Asunto" class="form-control" @bind-Value="Registros.Asunto">
+                <InputSelect id="Asunto" class="form-control" @bind-Value="nuevoRegistro.Asunto">
                     <option value="">Seleccione una opcion</option>
                     @foreach (var asunto in Asuntos)
                     {
@@ -55,10 +55,10 @@
                 </InputSelect>
             </td>
             <td>
-                <InputText id="Resumen" class="form-control" @bind-Value="Registros.DescCorta" />
+                <InputText id="Resumen" class="form-control" @bind-Value="nuevoRegistro.DescCorta" />
             </td>
             <td>
-                <InputText id="Descripcion" class="form-control" @bind-Value="Registros.Descripcion" />
+                <InputText id="Descripcion" class="form-control" @bind-Value="nuevoRegistro.Descripcion" />
             </td>
             <td>
                 <span>@Registros.Fecha.ToString("dd/MM/yyyy")</span>
@@ -122,8 +122,29 @@
     private List<Registros> UserRegistros = new List<Registros>();
     private ApplicationUser? currentUser;
 
+
+    private string? descripcionInput { get; set; }
+    private string? descrpcionCortaInput { get; set; }
+    private string? asuntoInput { get; set; }
+    private string? clienteInput { get; set; }
+
+    Registros nuevoRegistro = new Registros
+        {
+            Nombre = "sdf",
+            Cliente = "clienteInput",
+            Asunto = "asuntoInput",
+            DescCorta = "descrpcionCortaInput",
+            Descripcion = "descripcionInput",
+            Fecha = DateTime.Now,
+            Estado = "Nuevo"
+        };
+
+
+
     protected override async Task OnInitializedAsync()
     {
+
+
         try
         {
             var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
@@ -138,6 +159,8 @@
 
             Registros.Fecha = DateTime.Now;
             ContadorId = IdDisplayContador();
+
+            //test
 
             // Crear instancias separadas del DbContext de forma correcta
             await using var dbContext = DbContextFactory.CreateDbContext();
@@ -202,23 +225,16 @@
                 }
             }
 
-            //debe insertar los datos que se llenaron en el formulario
-            Registros.Nombre = UserName + " " + UserLastName;
-            Registros.Estado = "Nuevo";
+			Console.WriteLine($"Guarda el objeto: {nuevoRegistro.Nombre}");
 
-            await using (var dbContext = DbContextFactory.CreateDbContext())
-            {
-                dbContext.Registros.Add(Registros);
-                await dbContext.SaveChangesAsync();
-            }
+            await using var dbContext = DbContextFactory.CreateDbContext();
+            dbContext.Registros.Add(nuevoRegistro);
+            await dbContext.SaveChangesAsync();
 
-            // Usar un nuevo contexto para recargar los registros
-            await using (var dbContext = DbContextFactory.CreateDbContext())
-            {
-                UserRegistros = await dbContext.Registros
-                    .Where(r => r.Nombre == $"{UserName} {UserLastName}")
-                    .ToListAsync();
-            }
+            // Recargar los registros again
+            /*UserRegistros = await dbContext.Registros
+                .Where(r => r.Nombre == $"{UserName} {UserLastName}")
+               .ToListAsync();*/
         }
         catch (Exception ex)
         {
